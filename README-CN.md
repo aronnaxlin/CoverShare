@@ -13,7 +13,7 @@
 
 ## 🌐 线上体验
 
-**[[https://hel1umhe.github.io/CoverShareMobileFix/](https://hel1umhe.github.io/CoverShareMobileFix/)]**
+**[https://hel1umhe.github.io/CoverShareMobileFix/](https://hel1umhe.github.io/CoverShareMobileFix/)**
 
 ## ✨ 功能特性
 
