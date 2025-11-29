@@ -13,7 +13,7 @@
 
 ## 🌐 线上体验
 
-**[https://musicshare.aronnax.site](https://musicshare.aronnax.site)**
+**[[https://hel1umhe.github.io/CoverShareMobileFix/](https://hel1umhe.github.io/CoverShareMobileFix/)]**
 
 ## ✨ 功能特性
 
