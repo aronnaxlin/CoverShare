@@ -10,18 +10,19 @@ A stylish, single-page web application to generate and share beautiful music alb
 
 ## 🌐 Live Demo
 
-**[https://musicshare.aronnax.site](https://musicshare.aronnax.site)**
+I have run the project in Cloudflare Pages, and you can visit it in: 
+**[https://covershare.aronnax.site](https://covershare.aronnax.site)**
 
 ## ✨ Features
-- **[New] Classic Vive Mode**: Provide a new mode called "Classic Vibe" which outputs the image of the album in an album case, with beautiful fonts display.
+- **[New] Classic Vive Mode**: Provide a new mode called "Classic Vibe" which outputs the image of the album in an album case, with beautiful fonts display. Switch mode by click button in the right-top corner of the screen.
 - **Album Search**: Instantly find albums using the iTunes Search API.
 - **Dynamic Card Generation**: Automatically creates a visually appealing card for any album.
-- **Vibrant "Liquid" Background**: The card background is a beautiful gradient dynamically generated from the dominant colors of the album cover.
+- **"Liquid Glass" Design**: The card background is a beautiful gradient dynamically generated from the dominant colors of the album cover. I copied the name from Apple but failed to achieve their effect.
 - **Color Enhancement**: A custom algorithm boosts the extracted colors to ensure a vibrant and aesthetically pleasing theme for each card.
 - **High-Quality Export**: Download the generated card as a high-resolution, transparent PNG file, perfect for sharing.
 - **Modern UI**:
     -   Light & Dark mode support.
-    -   Multi-language interface (English, 简体中文, 繁體中文).
+    -   Multi-language interface (English, Simplified Chinese, Traditional Chinese).
     -   Fully responsive design for both desktop and mobile.
 - **Zero Dependencies**: Built with vanilla JavaScript, HTML, and CSS. No build step required.
 
@@ -36,11 +37,12 @@ A stylish, single-page web application to generate and share beautiful music alb
 - **Fonts & Icons**:
     -   Google Fonts (Roboto)
     -   Material Icons
-    -   UnboundedSans
+    -   [UnboundedSans](https://github.com/maoken-fonts/unbounded-sans)
 
 ## 🚀 How It Works
 
 1.  **Search**: The user enters a search query (e.g., "Taylor Swift Midnights").
+> Only albums or artists are allowed, because I prefer to listen to tracks within an album. You are welcome to change the search pattern.
 2.  **Fetch**: The app calls the iTunes Search API to get album details, including the cover art URL.
 3.  **Color Extraction**: Once the album art is loaded, the `Color Thief` library extracts a palette of dominant colors from the image.
 4.  **Color Processing**: A custom `boostColor` function converts the primary RGB colors to HSL, adjusts their saturation and lightness to make them more vibrant, and ensures they work well for a background.
@@ -65,6 +67,8 @@ As this is a self-contained project, getting started is simple:
 3.  Open the `index.html` file in your favorite web browser.
 
 That's it! No installation or build process is needed.
+
+> Or just download code zip file. But you need to download "UnboundedSans.otf" and "UnboundedSans.ttf" to get fonts support. 
 
 ## 📄 License
 
