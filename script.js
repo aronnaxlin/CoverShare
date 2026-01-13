@@ -1,4 +1,4 @@
-        // Init
+﻿        // Init
         const i18n = {
             CN: { workspace: "工作区", blog: "博客", search_ph: "搜索专辑 (如: Jay Chou)" },
             TW: { workspace: "工作區", blog: "部落格", search_ph: "搜尋專輯 (如: Jay Chou)" },
@@ -174,40 +174,37 @@
             }
         }
 
-        // Helper to resolve Spotify URL (via backend API)
+        // Helper to resolve Spotify URL (via backend proxy to avoid CORS)
         async function resolveSpotifyUrl(spotifyUrl) {
             try {
-                console.log('Resolving Spotify URL...');
+                console.log('Resolving Spotify URL via backend proxy...');
 
-                // For now, we'll use a simple method: fetch the page and parse meta tags
-                // In production, this should go through backend to avoid CORS
-                const response = await fetch(spotifyUrl, {
+                // Use production URL if on production, otherwise use relative path
+                const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                    ? ''
+                    : 'https://covershare.aronnax.site';
+
+                const response = await fetch(`${apiBase}/api/resolve-spotify`, {
+                    method: 'POST',
                     headers: {
-                        'User-Agent': 'Mozilla/5.0 (compatible; Twitterbot/1.0)'
-                    }
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: spotifyUrl })
                 });
-                const text = await response.text();
 
-                // Extract og:description which has "Artist · Album · Type · Year"
-                const match = text.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
-                if (match) {
-                    const parts = match[1].split(' · ');
-                    if (parts.length >= 2) {
-                        const artist = parts[0];
-                        const album = parts[1];
-                        return `${album} ${artist}`;
-                    }
-                }
+                const data = await response.json();
 
-                // Fallback: try title
-                const titleMatch = text.match(/<title>([^<]+)<\/title>/i);
-                if (titleMatch) {
-                    return titleMatch[1].replace(' | Spotify', '').replace(' - song and lyrics by ', ' ');
+                if (data.success) {
+                    console.log(`✅ Resolved to: ${data.searchQuery}`);
+                    return data.searchQuery;
+                } else {
+                    console.error('❌ Failed to resolve:', data.error);
+                    return null;
                 }
             } catch (e) {
                 console.error("❌ Error resolving Spotify URL:", e);
+                return null;
             }
-            return null;
         }
 
         // --- Core Font Logic ---
