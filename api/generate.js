@@ -378,12 +378,11 @@ export default async function handler(req, res) {
 
       // Take screenshot
       const element = await page.$("#vinyl-card");
-      const screenshot = await element.screenshot({
+      const base64Image = await element.screenshot({
         type: "png",
         omitBackground: true,
+        encoding: "base64",
       });
-
-      const base64Image = screenshot.toString("base64");
 
       results.push({
         style: currentStyle,
