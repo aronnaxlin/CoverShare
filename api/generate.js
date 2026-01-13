@@ -101,7 +101,7 @@ async function resolveQQMusicUrl(qqUrl) {
             finalUrl = res.url;
             console.log(`Redirected to: ${finalUrl}`);
 
-            const redirectMatch = finalUrl.match(/songDetail\/([A-Za-z0-9]+)/);
+            const redirectMatch = finalUrl.match(/songDetail\/([A-Za-z0-9]+)/) || finalUrl.match(/songmid=([A-Za-z0-9]+)/);
             if (redirectMatch) {
                 songMid = redirectMatch[1];
             }

@@ -51,7 +51,7 @@ export default async function handler(req, res) {
             console.log(`Redirected to: ${finalUrl}`);
 
             // Try extracting from final URL
-            const redirectMatch = finalUrl.match(/songDetail\/([A-Za-z0-9]+)/);
+            const redirectMatch = finalUrl.match(/songDetail\/([A-Za-z0-9]+)/) || finalUrl.match(/songmid=([A-Za-z0-9]+)/);
             if (redirectMatch) {
                 songMid = redirectMatch[1];
             }
