@@ -89,21 +89,31 @@ async function resolveQQMusicUrl(qqUrl) {
         songMid = directMatch[1];
     } else {
         // Try fetching to see if it redirects
-        console.log(`Fetching QQ Music URL to resolve redirect: ${qqUrl}`);
+        console.log(`Fetching QQ Music URL to resolve redirect: ${cleanUrl}`);
         try {
-            const res = await fetch(cleanUrl, {
-                method: 'HEAD',
+            // Use GET to get the full response body - songmid may be in HTML, not URL
+            const fetchRes = await fetch(cleanUrl, {
+                method: 'GET',
                 redirect: 'follow',
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15'
                 }
             });
-            finalUrl = res.url;
+            finalUrl = fetchRes.url;
             console.log(`Redirected to: ${finalUrl}`);
 
+            // Try extracting from final URL first
             const redirectMatch = finalUrl.match(/songDetail\/([A-Za-z0-9]+)/) || finalUrl.match(/songmid=([A-Za-z0-9]+)/);
             if (redirectMatch) {
                 songMid = redirectMatch[1];
+            } else {
+                // URL doesn't have songmid - check HTML body
+                const htmlBody = await fetchRes.text();
+                const bodyMatch = htmlBody.match(/songmid[=:]["']?([A-Za-z0-9]+)/i);
+                if (bodyMatch) {
+                    songMid = bodyMatch[1];
+                    console.log(`Found songmid in HTML body: ${songMid}`);
+                }
             }
         } catch (e) {
             console.error("Error resolving redirect:", e);

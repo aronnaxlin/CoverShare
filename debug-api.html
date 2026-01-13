@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoverShare API Debug</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+
+        h1 {
+            color: #9b59b6;
+        }
+
+        .section {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input,
+        textarea,
+        select,
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+        }
+
+        input,
+        textarea {
+            background: #0f3460;
+            color: #fff;
+        }
+
+        select {
+            background: #0f3460;
+            color: #fff;
+        }
+
+        button {
+            background: linear-gradient(135deg, #9b59b6, #3498db);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        pre {
+            background: #0a0a1a;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .success {
+            color: #2ecc71;
+        }
+
+        .error {
+            color: #e74c3c;
+        }
+
+        .info {
+            color: #f39c12;
+        }
+
+        img {
+            max-width: 300px;
+            border-radius: 12px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔧 CoverShare API Debug Tool</h1>
+
+    <div class="section">
+        <h2>Test /api/generate</h2>
+        <label>Query (Paste QQ Music or Spotify link here):</label>
+        <textarea id="query" rows="3"
+            placeholder="宇多田光 (宇多田ヒカル) - One Last Kiss https://c6.y.qq.com/base/fcgi-bin/u?__=bjvC0OsVxI0M @QQ音乐"></textarea>
+
+        <label>Style:</label>
+        <select id="style">
+            <option value="liquid">Liquid</option>
+            <option value="jewel">Classic</option>
+            <option value="both">Both</option>
+        </select>
+
+        <button onclick="testGenerateAPI()">🚀 Test /api/generate</button>
+    </div>
+
+    <div class="section">
+        <h2>Test /api/resolve-qqmusic (Proxy Only)</h2>
+        <label>QQ Music URL:</label>
+        <input type="text" id="qqurl" placeholder="https://c6.y.qq.com/base/fcgi-bin/u?__=bjvC0OsVxI0M">
+        <button onclick="testQQMusicProxy()">🔍 Test QQ Music Resolver</button>
+    </div>
+
+    <div class="section">
+        <h2>📋 Results</h2>
+        <div id="status"></div>
+        <pre id="result">Results will appear here...</pre>
+        <div id="images"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'https://cover-share.vercel.app';
+        // const BASE_URL = 'http://localhost:3000'; // Uncomment for local testing
+
+        function log(msg, type = 'info') {
+            const status = document.getElementById('status');
+            status.innerHTML = `<span class="${type}">${msg}</span>`;
+        }
+
+        function showResult(data) {
+            document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function testGenerateAPI() {
+            const query = document.getElementById('query').value.trim();
+            const style = document.getElementById('style').value;
+
+            if (!query) {
+                log('Please enter a query', 'error');
+                return;
+            }
+
+            log('Calling /api/generate...', 'info');
+            document.getElementById('images').innerHTML = '';
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${BASE_URL}/api/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, style })
+                });
+
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+                const data = await response.json();
+
+                showResult(data);
+
+                if (data.success) {
+                    log(`✅ Success! (${elapsed}s) - Found: ${data.album.title} by ${data.album.artist}`, 'success');
+
+                    // Display images
+                    const imagesDiv = document.getElementById('images');
+                    imagesDiv.innerHTML = '<h3>Generated Images:</h3>';
+                    data.images.forEach(img => {
+                        const imgEl = document.createElement('img');
+                        imgEl.src = `data:image/png;base64,${img.image}`;
+                        imgEl.alt = img.styleName;
+                        imagesDiv.appendChild(imgEl);
+                    });
+                } else {
+                    log(`❌ API Error: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                log(`❌ Network/Parse Error: ${e.message}`, 'error');
+                showResult({ error: e.message, stack: e.stack });
+            }
+        }
+
+        async function testQQMusicProxy() {
+            const url = document.getElementById('qqurl').value.trim();
+
+            if (!url) {
+                log('Please enter a QQ Music URL', 'error');
+                return;
+            }
+
+            log('Calling /api/resolve-qqmusic...', 'info');
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/resolve-qqmusic?url=${encodeURIComponent(url)}`);
+                const data = await response.json();
+
+                showResult(data);
+
+                if (data.success) {
+                    log(`✅ Resolved: ${data.album} by ${data.artist}`, 'success');
+                } else {
+                    log(`❌ Resolver Error: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                log(`❌ Network/Parse Error: ${e.message}`, 'error');
+                showResult({ error: e.message });
+            }
+        }
+    </script>
+</body>
+
+</html>
