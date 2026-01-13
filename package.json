@@ -1,0 +1,19 @@
+{
+  "name": "covershare-api",
+  "version": "1.0.0",
+  "description": "API service for CoverShare iOS Shortcuts integration",
+  "main": "api/generate.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@sparticuz/chromium": "^123.0.1",
+    "puppeteer-core": "^22.0.0"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.0.0",
+    "vercel": "^33.0.0"
+  }
+}

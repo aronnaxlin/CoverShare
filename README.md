@@ -10,7 +10,7 @@ A stylish, single-page web application to generate and share beautiful music alb
 
 ## 🌐 Live Demo
 
-I have run the project in Cloudflare Pages, and you can visit it in: 
+I have run the project in Cloudflare Pages, and you can visit it in:
 **[https://covershare.aronnax.site](https://covershare.aronnax.site)**
 
 ## ✨ Features
@@ -25,6 +25,7 @@ I have run the project in Cloudflare Pages, and you can visit it in:
     -   Multi-language interface (English, Simplified Chinese, Traditional Chinese).
     -   Fully responsive design for both desktop and mobile.
 - **Zero Dependencies**: Built with vanilla JavaScript, HTML, and CSS. No build step required.
+- **[New] iOS Shortcuts Integration**: Share songs from Spotify and automatically generate cover images via iOS Shortcuts. See [iOS Setup Guide](./docs/ios-shortcut-guide.md).
 
 ## 🛠️ Technologies Used
 
@@ -68,7 +69,7 @@ As this is a self-contained project, getting started is simple:
 
 That's it! No installation or build process is needed.
 
-> Or just download code zip file. But you need to download "UnboundedSans.otf" and "UnboundedSans.ttf" to get fonts support. 
+> Or just download code zip file. But you need to download "UnboundedSans.otf" and "UnboundedSans.ttf" to get fonts support.
 
 ## 📄 License
 
