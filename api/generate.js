@@ -91,7 +91,7 @@ async function resolveQQMusicUrl(qqUrl) {
         // Try fetching to see if it redirects
         console.log(`Fetching QQ Music URL to resolve redirect: ${qqUrl}`);
         try {
-            const res = await fetch(qqUrl, {
+            const res = await fetch(cleanUrl, {
                 method: 'HEAD',
                 redirect: 'follow',
                 headers: {
