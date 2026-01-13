@@ -94,29 +94,51 @@
             try {
                 let searchQuery = q;
 
+                // Hide suggestions list
+                const list = document.getElementById('suggestions');
+                list.style.display = 'none';
+
                 // Check if it's a QQ Music URL
                 if (q.includes('y.qq.com')) {
-                    console.log('Detected QQ Music URL, resolving via backend...');
+                    console.log('🎵 Detected QQ Music URL, resolving via backend...');
                     const resolved = await resolveQQMusicUrl(q);
                     if (resolved) {
                         searchQuery = resolved;
+                        console.log('✅ Resolved to:', searchQuery);
                     } else {
-                        console.error('Failed to resolve QQ Music URL');
+                        console.error('❌ Failed to resolve QQ Music URL');
                         return;
                     }
                 }
-                // Spotify URLs will be handled by iTunes search directly
-                // as Spotify links often fail in iTunes search, but we keep for compatibility
+                // Check if it's a Spotify URL
+                else if (q.includes('open.spotify.com')) {
+                    console.log('🎵 Detected Spotify URL, resolving...');
+                    const resolved = await resolveSpotifyUrl(q);
+                    if (resolved) {
+                        searchQuery = resolved;
+                        console.log('✅ Resolved to:', searchQuery);
+                    } else {
+                        console.error('❌ Failed to resolve Spotify URL, trying direct search');
+                        // Fallback: try direct search
+                    }
+                }
 
                 const isTW = currLang === 'TW';
                 const langParam = isTW ? 'zh_TW' : 'en_US';
                 const countryParam = isTW ? 'TW' : 'US';
 
+                console.log('🔍 Searching iTunes for:', searchQuery);
                 const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&entity=album&limit=1&lang=${langParam}&country=${countryParam}`);
                 const d = await res.json();
-                if (d.results.length) loadAlbum(d.results[0]);
-                else console.warn('No results found for:', searchQuery);
-            } catch (e) { console.error("Fetch album failed:", e); }
+                if (d.results.length) {
+                    console.log('✅ Found album:', d.results[0].collectionName);
+                    loadAlbum(d.results[0]);
+                } else {
+                    console.warn('⚠️ No results found for:', searchQuery);
+                }
+            } catch (e) {
+                console.error("❌ Fetch album failed:", e);
+            }
         }
 
         // Helper to resolve QQ Music URL (via backend proxy to avoid CORS)
@@ -150,6 +172,42 @@
                 console.error("❌ Error resolving QQ Music URL:", e);
                 return null;
             }
+        }
+
+        // Helper to resolve Spotify URL (via backend API)
+        async function resolveSpotifyUrl(spotifyUrl) {
+            try {
+                console.log('Resolving Spotify URL...');
+
+                // For now, we'll use a simple method: fetch the page and parse meta tags
+                // In production, this should go through backend to avoid CORS
+                const response = await fetch(spotifyUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (compatible; Twitterbot/1.0)'
+                    }
+                });
+                const text = await response.text();
+
+                // Extract og:description which has "Artist · Album · Type · Year"
+                const match = text.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
+                if (match) {
+                    const parts = match[1].split(' · ');
+                    if (parts.length >= 2) {
+                        const artist = parts[0];
+                        const album = parts[1];
+                        return `${album} ${artist}`;
+                    }
+                }
+
+                // Fallback: try title
+                const titleMatch = text.match(/<title>([^<]+)<\/title>/i);
+                if (titleMatch) {
+                    return titleMatch[1].replace(' | Spotify', '').replace(' - song and lyrics by ', ' ');
+                }
+            } catch (e) {
+                console.error("❌ Error resolving Spotify URL:", e);
+            }
+            return null;
         }
 
         // --- Core Font Logic ---

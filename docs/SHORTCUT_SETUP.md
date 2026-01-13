@@ -36,22 +36,48 @@ This shortcut will:
 
 ### Step 3: Add Actions (Follow Exactly)
 
-#### Action 1: Get Shared Input
+#### Action 1: Get Input from Share Sheet OR Clipboard
+我们需要支持两种输入方式：
+1. 从 Spotify 的 Share Sheet 获取
+2. 从剪贴板读取（用于 QQ音乐等应用）
+
+**步骤：**
 - Search for: **"Receive"**
 - Add: **"Receive URLs from Share Sheet"** or **"Receive Any Input"**
+- ⚠️ **重要**: 在这个 action 的设置中，打开 **"Show in Share Sheet"**
 
-#### Action 2: Get Text from Input
-- Search for: **"Get Text"**
-- Add: **"Get Text from Input"**
-- Set input to: **Shortcut Input**
+#### Action 2: Check if Input is Empty
+因为 QQ音乐无法直接分享，我们需要在没有输入时从剪贴板读取：
 
-#### Action 3: Store Query
+- Search for: **"If"**
+- Add: **"If"**
+- Condition: **Shortcut Input** → **does not have any value**
+- Inside the "If" block:
+  - Search for: **"Get Clipboard"**
+  - Add: **"Get Clipboard"**
+  - Search for: **"Set Variable"**
+  - Add: **"Set Variable"**
+  - Variable Name: `ClipboardURL`
+  - Value: **Clipboard** (from previous action)
+
+#### Action 3: Combine Inputs
+在 "End If" 之后（很重要！）：
+
+- Search for: **"Text"**
+- Add: **"Text"**
+- Tap on the text field and select **"Select Magic Variable"**
+- Add two variables:
+  1. **Shortcut Input** (from Action 1)
+  2. **ClipboardURL** (from Action 2)
+- 这样无论是分享还是剪贴板都能工作
+
+#### Action 4: Store Query
 - Search for: **"Set Variable"**
 - Add: **"Set Variable"**
 - Variable Name: `SongQuery`
 - Value: **Text** (from previous action)
 
-#### Action 4: Show Style Menu
+#### Action 5: Show Style Menu
 - Search for: **"Choose from Menu"**
 - Add: **"Choose from Menu"**
 - Prompt: `Select Image Style`
@@ -85,7 +111,7 @@ This shortcut will:
 
 ⚠️ Make sure this is AFTER the "End Menu" action!
 
-#### Action 5: Get Contents of URL
+#### Action 6: Get Contents of URL
 - Search for: **"Get Contents"**
 - Add: **"Get Contents of URL"**
 - Configure:
@@ -100,12 +126,12 @@ This shortcut will:
     - Add field `query`: Select variable **SongQuery**
     - Add field `style`: Select variable **StyleChoice**
 
-#### Action 6: Get Dictionary
+#### Action 7: Get Dictionary
 - Search for: **"Get Dictionary"**
 - Add: **"Get Dictionary from Input"**
 - Input: **Contents of URL** (from previous action)
 
-#### Action 7: Check for Errors (Crucial Debugging)
+#### Action 8: Check for Errors (Crucial Debugging)
 - Search for: **"Get Value"**
 - Add: **"Get Dictionary Value"**
 - Key: `error`
@@ -121,13 +147,13 @@ This shortcut will:
   - Add: **"Stop This Shortcut"**
 - End If
 
-#### Action 8: Get Images Array
+#### Action 9: Get Images Array
 - Search for: **"Get Value"**
 - Add: **"Get Dictionary Value"**
 - Key: Type `images`
 - Dictionary: **Dictionary** (from previous action)
 
-#### Action 8: Loop Through Images
+#### Action 10: Loop Through Images
 - Search for: **"Repeat"**
 - Add: **"Repeat with Each"**
 - Each item in: **Dictionary Value** (images array)
@@ -136,18 +162,18 @@ This shortcut will:
 
 ### Step 6: Inside the Repeat Loop
 
-#### Action 9: Get Image Data
+#### Action 11: Get Image Data
 - Add: **"Get Dictionary Value"**
 - Key: `image`
 - Dictionary: **Repeat Item**
 
-#### Action 10: Decode Base64
+#### Action 12: Decode Base64
 - Search for: **"Base64"**
 - Add: **"Base64 Encode"**
 - Change it to: **"Base64 Decode"** (tap the action, toggle)
 - Input: **Dictionary Value** (from previous action)
 
-#### Action 11: Save to Photos
+#### Action 13: Save to Photos
 - Search for: **"Save"**
 - Add: **"Save to Photo Album"**
 - Photo: **Base64 Decoded**
@@ -159,7 +185,7 @@ This shortcut will:
 
 ⚠️ This should be AFTER the "End Repeat" action!
 
-#### Action 12: Show Notification
+#### Action 14: Show Notification
 - Search for: **"Show Notification"**
 - Add: **"Show Notification"**
 - Message: `✅ CoverShare images saved to Photos!`
@@ -170,21 +196,23 @@ This shortcut will:
 
 ```
 1. Receive URLs from Share Sheet
-2. Get Text from Input
-3. Set Variable → SongQuery
-4. Choose from Menu "Select Image Style"
+2. If Shortcut Input is empty
+   └─ Get Clipboard → Set Variable ClipboardURL
+3. Text (combine Shortcut Input + ClipboardURL)
+4. Set Variable → SongQuery
+5. Choose from Menu "Select Image Style"
    ├─ Liquid Glass → Text "liquid" → Set Variable StyleChoice
    └─ Classic Vibe → Text "jewel" → Set Variable StyleChoice
-5. Get Contents of URL (POST to API)
-6. Get Dictionary from Input
-7. Check for Error
+6. Get Contents of URL (POST to API)
+7. Get Dictionary from Input
+8. Check for Error
    └─ If Error exists → Show Alert & Stop
-8. Get Dictionary Value (key: "images")
-9. Repeat with Each (loop through images)
+9. Get Dictionary Value (key: "images")
+10. Repeat with Each (loop through images)
     ├─ Get Dictionary Value (key: "image")
     ├─ Base64 Decode
     └─ Save to Photo Album
-10. Show Notification "Images saved!"
+11. Show Notification "Images saved!"
 ```
 
 ---
@@ -203,14 +231,15 @@ This shortcut will:
 ### From QQ Music:
 1. Open **QQ Music** app
 2. Play any song
-3. Tap **Share** button
-4. Copy the share link
-5. Open **Shortcuts** app
-6. Run **CoverShare** shortcut
-7. Paste the QQ Music link when prompted
-8. Select your preferred style
-9. Wait 5-10 seconds
-10. Images appear in Photos! 🎉
+3. Tap **Share** button → **Copy Link** (复制链接)
+4. Open **Shortcuts** app
+5. Run **CoverShare** shortcut
+6. Shortcut will automatically read from clipboard
+7. Select your preferred style
+8. Wait 5-10 seconds
+9. Images appear in Photos! 🎉
+
+💡 **提示**: 因为QQ音乐不支持系统分享菜单，所以需要先复制链接，然后运行Shortcut。Shortcut会自动从剪贴板读取链接。
 
 ---
 
