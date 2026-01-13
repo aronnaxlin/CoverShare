@@ -1,12 +1,11 @@
-const chromium = require("@sparticuz/chromium");
-const puppeteer = require("puppeteer-core");
+const chromium = require('chrome-aws-lambda');
 
 // iTunes API search function
 async function searchAlbum(query) {
   const encodedQuery = encodeURIComponent(query);
   const isTW = false; // Default to US store for consistency
-  const langParam = isTW ? "zh_TW" : "en_US";
-  const countryParam = isTW ? "TW" : "US";
+  const langParam = isTW ? 'zh_TW' : 'en_US';
+  const countryParam = isTW ? 'TW' : 'US';
 
   const url = `https://itunes.apple.com/search?term=${encodedQuery}&entity=album&limit=1&lang=${langParam}&country=${countryParam}`;
 
@@ -14,7 +13,7 @@ async function searchAlbum(query) {
   const data = await response.json();
 
   if (!data.results || data.results.length === 0) {
-    throw new Error("Album not found");
+    throw new Error('Album not found');
   }
 
   return data.results[0];
@@ -22,9 +21,9 @@ async function searchAlbum(query) {
 
 // Generate HTML template with album data
 function generateHTML(albumData, style) {
-  const artworkUrl = albumData.artworkUrl100.replace("100x100bb", "600x600bb");
+  const artworkUrl = albumData.artworkUrl100.replace('100x100bb', '600x600bb');
   const year = albumData.releaseDate.slice(0, 4);
-  const dateFull = albumData.releaseDate.slice(0, 10).replace(/-/g, ".");
+  const dateFull = albumData.releaseDate.slice(0, 10).replace(/-/g, '.');
   const genre = albumData.primaryGenreName.toUpperCase();
   const title = albumData.collectionName;
   const artist = albumData.artistName;
@@ -204,7 +203,7 @@ function generateHTML(albumData, style) {
 <body>
     <div id="vinyl-card" class="style-${style}">
         ${
-          style === "liquid"
+          style === 'liquid'
             ? `
         <div class="liquid-layer">
             <div class="liquid-bg"></div>
@@ -264,42 +263,38 @@ function generateHTML(albumData, style) {
 // Main handler
 export default async function handler(req, res) {
   // Handle CORS preflight
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { query, style = "both" } = req.body;
+    const { query, style = 'both' } = req.body;
 
     if (!query) {
-      return res.status(400).json({ error: "Missing query parameter" });
+      return res.status(400).json({ error: 'Missing query parameter' });
     }
 
     // Validate style parameter
-    const validStyles = ["liquid", "jewel", "both"];
+    const validStyles = ['liquid', 'jewel', 'both'];
     if (!validStyles.includes(style)) {
-      return res
-        .status(400)
-        .json({ error: "Invalid style. Must be liquid, jewel, or both" });
+      return res.status(400).json({ error: 'Invalid style. Must be liquid, jewel, or both' });
     }
 
     console.log(`Searching for album: ${query}, style: ${style}`);
 
     // Search for album
     const albumData = await searchAlbum(query);
-    console.log(
-      `Found album: ${albumData.collectionName} by ${albumData.artistName}`
-    );
+    console.log(`Found album: ${albumData.collectionName} by ${albumData.artistName}`);
 
-    // Launch browser
-    const browser = await puppeteer.launch({
+    // Launch browser with chrome-aws-lambda
+    const browser = await chromium.puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
+      executablePath: await chromium.executablePath,
       headless: chromium.headless,
     });
 
