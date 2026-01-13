@@ -62,6 +62,38 @@ function generateHTML(albumData, style) {
   const title = albumData.collectionName;
   const artist = albumData.artistName;
 
+  // --- Dynamic Sizing Logic ---
+  const getLen = (str) => {
+    // Count CJK characters as 2, others as 1
+    let len = 0;
+    for (let i = 0; i < str.length; i++) {
+        len += str.charCodeAt(i) > 255 ? 2 : 1;
+    }
+    return len;
+  };
+
+  const tLen = getLen(title);
+  const aLen = getLen(artist);
+
+  let tClass = '';
+  if (tLen > 60) tClass = 'size-huge';
+  else if (tLen > 40) tClass = 'size-vlong';
+  else if (tLen > 25) tClass = 'size-long';
+  else if (tLen > 15) tClass = 'size-medium';
+
+  let aClass = '';
+  if (aLen > 40) aClass = 'size-vlong';
+  else if (aLen > 25) aClass = 'size-long';
+
+  // Spine needs strict control
+  let spineClass = '';
+  const totalSpineLen = tLen + aLen;
+  if (totalSpineLen > 70) spineClass = 'size-huge';
+  else if (totalSpineLen > 50) spineClass = 'size-vlong';
+  else if (totalSpineLen > 35) spineClass = 'size-long';
+
+  // ---------------------------
+
   // Use the exact HTML structure from index.html (simplified for rendering)
   const html = `
 <!DOCTYPE html>
@@ -134,6 +166,15 @@ function generateHTML(albumData, style) {
             font-size: 11px; font-weight: 400; letter-spacing: 0.5px;
             text-transform: uppercase;
         }
+
+        /* --- Dynamic Font Sizes (Liquid) --- */
+        .title-l.size-medium { font-size: 20px; }
+        .title-l.size-long { font-size: 18px; }
+        .title-l.size-vlong { font-size: 16px; line-height: 1.1; }
+        .title-l.size-huge { font-size: 14px; line-height: 1.1; }
+
+        .artist-l.size-long { font-size: 14px; }
+        .artist-l.size-vlong { font-size: 12px; }
 
         .watermark {
             position: absolute; bottom: 150px; right: 2px;
@@ -232,6 +273,17 @@ function generateHTML(albumData, style) {
         .j-title { font-weight: normal; font-size: 32px; color: #222; margin-bottom: 4px; }
         .j-artist { font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
         .j-meta { margin-top: 12px; border-top: 1px dashed #ddd; padding-top: 8px; font-size: 11px; color: #999; display: flex; justify-content: space-between; }
+
+        /* --- Dynamic Font Sizes (Jewel) --- */
+        .j-title.size-medium { font-size: 26px; }
+        .j-title.size-long { font-size: 22px; }
+        .j-title.size-vlong { font-size: 18px; }
+        .j-title.size-huge { font-size: 15px; }
+
+        /* Spine Text Sizing (important for long titles) */
+        .spine-text.size-long { font-size: 8px; letter-spacing: 0.5px; }
+        .spine-text.size-vlong { font-size: 7px; letter-spacing: 0px; }
+        .spine-text.size-huge { font-size: 6px; letter-spacing: 0px; }
     </style>
 </head>
 <body>
@@ -248,8 +300,8 @@ function generateHTML(albumData, style) {
                 <img src="${artworkUrl}" crossorigin="anonymous">
             </div>
             <div class="info-l">
-                <div class="title-l">${title}</div>
-                <div class="artist-l">${artist}</div>
+                <div class="title-l ${tClass}">${title}</div>
+                <div class="artist-l ${aClass}">${artist}</div>
                 <div class="tags-row">
                     <span class="pill">${year}</span>
                     <span class="pill">${genre}</span>
@@ -265,7 +317,7 @@ function generateHTML(albumData, style) {
                 <div class="jewel-spine-white">
                     <div class="hinge-w top"></div>
                     <div class="hinge-w bottom"></div>
-                    <div class="spine-text font-main">${artist.toUpperCase()} - ${title.toUpperCase()}</div>
+                    <div class="spine-text font-main ${spineClass}">${artist.toUpperCase()} - ${title.toUpperCase()}</div>
                 </div>
                 <div class="jewel-cover-area">
                     <img src="${artworkUrl}" class="jewel-img" crossorigin="anonymous">
@@ -276,8 +328,8 @@ function generateHTML(albumData, style) {
             </div>
             <div class="jewel-info-card">
                 <div class="tape"></div>
-                <div class="j-title font-main">${title.toUpperCase()}</div>
-                <div class="j-artist font-artist">${artist.toUpperCase()}</div>
+                <div class="j-title font-main ${tClass}">${title.toUpperCase()}</div>
+                <div class="j-artist font-artist ${aClass}">${artist.toUpperCase()}</div>
                 <div class="j-meta font-main">
                     <span>${genre}</span>
                     <span>${dateFull}</span>
@@ -320,6 +372,20 @@ export default async function handler(req, res) {
 
     console.log(`Searching for album: ${query}, style: ${style}`);
 
+    // Start browser launch early to run in parallel with data fetching
+    const browserPromise = puppeteer.launch({
+      args: [
+        ...chromium.args,
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+      ],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    });
+
     // Check if query is a Spotify URL
     let searchQuery = query;
     if (query.includes('open.spotify.com')) {
@@ -333,19 +399,8 @@ export default async function handler(req, res) {
     const albumData = await searchAlbum(searchQuery);
     console.log(`Found album: ${albumData.collectionName} by ${albumData.artistName}`);
 
-    // Launch browser with minimal args for Vercel
-    const browser = await puppeteer.launch({
-      args: [
-        ...chromium.args,
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu'
-      ],
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: true,
-    });
+    // Wait for browser to be ready
+    const browser = await browserPromise;
 
     const results = [];
 
