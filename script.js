@@ -57,15 +57,10 @@
             const val = e.target.value.trim();
             if (val.length < 2) return;
 
-            // Check if it's a URL
-            if (val.includes('y.qq.com')) {
-                // QQ Music URL - resolve immediately
-                timer = setTimeout(async () => {
-                    const resolved = await resolveQQMusicUrl(val);
-                    if (resolved) fetchAlbum(resolved);
-                }, 500);
-            } else if (val.includes('open.spotify.com')) {
-                // Spotify URL - let the API handle it via generate endpoint
+            // Check if it's a URL (Spotify or QQ Music)
+            if (val.includes('open.spotify.com') || val.includes('y.qq.com')) {
+                // URL - pass directly to fetchAlbum, which will search iTunes
+                // The backend API will handle URL parsing if needed
                 timer = setTimeout(() => fetchAlbum(val), 500);
             } else {
                 // Regular search
@@ -97,53 +92,64 @@
 
         async function fetchAlbum(q) {
             try {
+                let searchQuery = q;
+
+                // Check if it's a QQ Music URL
+                if (q.includes('y.qq.com')) {
+                    console.log('Detected QQ Music URL, resolving via backend...');
+                    const resolved = await resolveQQMusicUrl(q);
+                    if (resolved) {
+                        searchQuery = resolved;
+                    } else {
+                        console.error('Failed to resolve QQ Music URL');
+                        return;
+                    }
+                }
+                // Spotify URLs will be handled by iTunes search directly
+                // as Spotify links often fail in iTunes search, but we keep for compatibility
+
                 const isTW = currLang === 'TW';
                 const langParam = isTW ? 'zh_TW' : 'en_US';
                 const countryParam = isTW ? 'TW' : 'US';
 
-                const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=album&limit=1&lang=${langParam}&country=${countryParam}`);
+                const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&entity=album&limit=1&lang=${langParam}&country=${countryParam}`);
                 const d = await res.json();
                 if (d.results.length) loadAlbum(d.results[0]);
+                else console.warn('No results found for:', searchQuery);
             } catch (e) { console.error("Fetch album failed:", e); }
         }
 
-        // Helper to resolve QQ Music URL
+        // Helper to resolve QQ Music URL (via backend proxy to avoid CORS)
         async function resolveQQMusicUrl(qqUrl) {
             try {
-                // Extract song_mid from URL
-                const match = qqUrl.match(/songDetail\/([A-Za-z0-9]+)/);
-                if (!match) return null;
+                console.log('Resolving QQ Music URL via backend proxy...');
 
-                const songMid = match[1];
-                console.log(`Extracted QQ Music song_mid: ${songMid}`);
+                // Use production URL if on production, otherwise use relative path
+                const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                    ? '' // Relative path for local development
+                    : 'https://covershare.aronnax.site'; // Production URL
 
-                // Build API request data
-                const apiData = {
-                    comm: { ct: 24, cv: 0 },
-                    songinfo: {
-                        method: "get_song_detail_yqq",
-                        param: { song_mid: songMid },
-                        module: "music.pf_song_detail_svr"
-                    }
-                };
+                const response = await fetch(`${apiBase}/api/resolve-qqmusic`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: qqUrl })
+                });
 
-                const apiUrl = `https://u.y.qq.com/cgi-bin/musicu.fcg?format=json&data=${encodeURIComponent(JSON.stringify(apiData))}`;
+                const data = await response.json();
 
-                const res = await fetch(apiUrl);
-                const data = await res.json();
-
-                if (data.songinfo?.data?.track_info) {
-                    const track = data.songinfo.data.track_info;
-                    const albumName = track.album.name || track.album.title;
-                    const artistName = track.singer && track.singer.length > 0 ? track.singer[0].name : '';
-
-                    console.log(`Resolved QQ Music URL to: ${albumName} ${artistName}`);
-                    return `${albumName} ${artistName}`;
+                if (data.success) {
+                    console.log(`✅ Resolved to: ${data.searchQuery}`);
+                    return data.searchQuery;
+                } else {
+                    console.error('❌ Failed to resolve:', data.error);
+                    return null;
                 }
             } catch (e) {
-                console.error("Error resolving QQ Music URL:", e);
+                console.error("❌ Error resolving QQ Music URL:", e);
+                return null;
             }
-            return null;
         }
 
         // --- Core Font Logic ---

@@ -1,0 +1,85 @@
+// QQ Music URL resolver proxy
+// Resolves QQ Music share URLs to album and artist names
+
+export default async function handler(req, res) {
+  // Handle CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST' && req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    // Get URL from query or body
+    const qqUrl = req.method === 'POST' ? req.body.url : req.query.url;
+
+    if (!qqUrl) {
+      return res.status(400).json({ error: 'Missing url parameter' });
+    }
+
+    // Extract song_mid from URL
+    const match = qqUrl.match(/songDetail\/([A-Za-z0-9]+)/);
+    if (!match) {
+      return res.status(400).json({ error: 'Invalid QQ Music URL format' });
+    }
+
+    const songMid = match[1];
+    console.log(`Extracted QQ Music song_mid: ${songMid}`);
+
+    // Build API request data
+    const apiData = {
+      comm: { ct: 24, cv: 0 },
+      songinfo: {
+        method: "get_song_detail_yqq",
+        param: { song_mid: songMid },
+        module: "music.pf_song_detail_svr"
+      }
+    };
+
+    const apiUrl = `https://u.y.qq.com/cgi-bin/musicu.fcg?format=json&data=${encodeURIComponent(JSON.stringify(apiData))}`;
+
+    const response = await fetch(apiUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://y.qq.com/'
+      }
+    });
+
+    const data = await response.json();
+
+    if (data.songinfo?.data?.track_info) {
+      const track = data.songinfo.data.track_info;
+      const albumName = track.album.name || track.album.title;
+      const artistName = track.singer && track.singer.length > 0 ? track.singer[0].name : '';
+      const songName = track.name || track.title;
+
+      console.log(`Resolved QQ Music URL to: ${albumName} ${artistName}`);
+
+      return res.status(200).json({
+        success: true,
+        album: albumName,
+        artist: artistName,
+        song: songName,
+        searchQuery: `${albumName} ${artistName}`
+      });
+    }
+
+    return res.status(404).json({
+      success: false,
+      error: 'Could not find track info in QQ Music API response'
+    });
+
+  } catch (error) {
+    console.error("Error resolving QQ Music URL:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Internal server error"
+    });
+  }
+}
