@@ -34,16 +34,34 @@ export default async function handler(req, res) {
 
     const text = await response.text();
 
-    // Extract og:description which has "Artist · Album · Type · Year"
-    const match = text.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
+    // Extract og:description which has "Artist · Album · Type · Year" or "Song · Artist · Album · Year"
+    // Regex allows content and property attributes in any order
+    const match = text.match(/<meta\s+(?:property="og:description"\s+content="([^"]+)"|content="([^"]+)"\s+property="og:description")/i);
+
     if (match) {
-      const parts = match[1].split(' · ');
+      const content = match[1] || match[2];
+      const parts = content.split(' · ');
+
+      let artist = '';
+      let album = '';
+
       if (parts.length >= 2) {
-        const artist = parts[0];
-        const album = parts[1];
+         if (parts.includes('Song')) {
+            // Track link: Title · Artist · Album · Year
+            if (parts.length >= 3) {
+                artist = parts[1];
+                album = parts[2];
+            } else {
+                 artist = parts[1];
+                 album = parts[0];
+            }
+         } else {
+             // Album link: Artist · Album · Type · Year
+             artist = parts[0];
+             album = parts[1];
+         }
 
         console.log(`Resolved Spotify URL to: ${album} ${artist}`);
-
         return res.status(200).json({
           success: true,
           album: album,

@@ -23,13 +23,42 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing url parameter' });
     }
 
-    // Extract song_mid from URL
-    const match = qqUrl.match(/songDetail\/([A-Za-z0-9]+)/);
-    if (!match) {
-      return res.status(400).json({ error: 'Invalid QQ Music URL format' });
+    // URL - check for short link or direct link
+    let finalUrl = qqUrl;
+    let songMid = null;
+
+    // Matches direct link: songDetail/0029CVxG4QngaW
+    const directMatch = qqUrl.match(/songDetail\/([A-Za-z0-9]+)/);
+
+    if (directMatch) {
+        songMid = directMatch[1];
+    } else {
+        // Try fetching to see if it redirects (for short links like c6.y.qq.com)
+        console.log(`Fetching QQ Music URL to resolve redirect: ${qqUrl}`);
+        try {
+            const res = await fetch(qqUrl, {
+                method: 'HEAD', // Try HEAD first to save bandwidth
+                redirect: 'follow',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
+            finalUrl = res.url;
+            console.log(`Redirected to: ${finalUrl}`);
+
+            // Try extracting from final URL
+            const redirectMatch = finalUrl.match(/songDetail\/([A-Za-z0-9]+)/);
+            if (redirectMatch) {
+                songMid = redirectMatch[1];
+            }
+        } catch (e) {
+            console.error("Error resolving redirect:", e);
+        }
     }
 
-    const songMid = match[1];
+    if (!songMid) {
+      return res.status(400).json({ error: 'Invalid QQ Music URL format or could not resolve short link' });
+    }
     console.log(`Extracted QQ Music song_mid: ${songMid}`);
 
     // Build API request data

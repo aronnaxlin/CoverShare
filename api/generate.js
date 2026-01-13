@@ -30,13 +30,31 @@ async function resolveSpotifyUrl(spotifyUrl) {
     });
     const text = await res.text();
 
-    // Extract og:description which typically has "Artist · Album · Type · Year"
-    const match = text.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
+    // Extract og:description which has "Artist · Album · Type · Year" or "Song · Artist · Album · Year"
+    const match = text.match(/<meta\s+(?:property="og:description"\s+content="([^"]+)"|content="([^"]+)"\s+property="og:description")/i);
+
     if (match) {
-      const parts = match[1].split(' · ');
+      const content = match[1] || match[2];
+      const parts = content.split(' · ');
+
+      let artist = '';
+      let album = '';
+
       if (parts.length >= 2) {
-        const artist = parts[0];
-        const album = parts[1];
+         if (parts.includes('Song')) {
+            // Track link: Title · Artist · Album · Year
+            if (parts.length >= 3) {
+                artist = parts[1];
+                album = parts[2];
+            } else {
+                 artist = parts[1];
+                 album = parts[0];
+            }
+         } else {
+             // Album link: Artist · Album · Type · Year
+             artist = parts[0];
+             album = parts[1];
+         }
         console.log(`Resolved Spotify URL to: ${album} ${artist}`);
         return `${album} ${artist}`;
       }
@@ -56,14 +74,43 @@ async function resolveSpotifyUrl(spotifyUrl) {
 // Helper to resolve QQ Music URL to "Album Artist" string
 async function resolveQQMusicUrl(qqUrl) {
   try {
-    // Extract song_mid from URL
-    const match = qqUrl.match(/songDetail\/([A-Za-z0-9]+)/);
-    if (!match) {
+    // URL - check for short link or direct link
+    let finalUrl = qqUrl;
+    let songMid = null;
+
+    // Matches direct link: songDetail/0029CVxG4QngaW
+    const directMatch = qqUrl.match(/songDetail\/([A-Za-z0-9]+)/);
+
+    if (directMatch) {
+        songMid = directMatch[1];
+    } else {
+        // Try fetching to see if it redirects
+        console.log(`Fetching QQ Music URL to resolve redirect: ${qqUrl}`);
+        try {
+            const res = await fetch(qqUrl, {
+                method: 'HEAD',
+                redirect: 'follow',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
+            finalUrl = res.url;
+            console.log(`Redirected to: ${finalUrl}`);
+
+            const redirectMatch = finalUrl.match(/songDetail\/([A-Za-z0-9]+)/);
+            if (redirectMatch) {
+                songMid = redirectMatch[1];
+            }
+        } catch (e) {
+            console.error("Error resolving redirect:", e);
+        }
+    }
+
+    if (!songMid) {
       console.error("Could not extract song_mid from QQ Music URL");
       return null;
     }
 
-    const songMid = match[1];
     console.log(`Extracted QQ Music song_mid: ${songMid}`);
 
     // Build API request data
