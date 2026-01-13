@@ -20,6 +20,39 @@ async function searchAlbum(query) {
   return data.results[0];
 }
 
+// Helper to resolve Spotify URL to "Album Artist" string
+async function resolveSpotifyUrl(spotifyUrl) {
+  try {
+    const res = await fetch(spotifyUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Twitterbot/1.0)'
+      }
+    });
+    const text = await res.text();
+
+    // Extract og:description which typically has "Artist · Album · Type · Year"
+    const match = text.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
+    if (match) {
+      const parts = match[1].split(' · ');
+      if (parts.length >= 2) {
+        const artist = parts[0];
+        const album = parts[1];
+        console.log(`Resolved Spotify URL to: ${album} ${artist}`);
+        return `${album} ${artist}`;
+      }
+    }
+
+    // Fallback: try title
+    const titleMatch = text.match(/<title>([^<]+)<\/title>/i);
+    if (titleMatch) {
+        return titleMatch[1].replace(' | Spotify', '');
+    }
+  } catch (e) {
+    console.error("Error resolving Spotify URL:", e);
+  }
+  return null;
+}
+
 // Generate HTML template with album data
 function generateHTML(albumData, style) {
   const artworkUrl = albumData.artworkUrl100.replace('100x100bb', '600x600bb');
@@ -287,8 +320,17 @@ export default async function handler(req, res) {
 
     console.log(`Searching for album: ${query}, style: ${style}`);
 
+    // Check if query is a Spotify URL
+    let searchQuery = query;
+    if (query.includes('open.spotify.com')) {
+        const resolved = await resolveSpotifyUrl(query);
+        if (resolved) {
+            searchQuery = resolved;
+        }
+    }
+
     // Search for album
-    const albumData = await searchAlbum(query);
+    const albumData = await searchAlbum(searchQuery);
     console.log(`Found album: ${albumData.collectionName} by ${albumData.artistName}`);
 
     // Launch browser with minimal args for Vercel
