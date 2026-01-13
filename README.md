@@ -71,6 +71,29 @@ That's it! No installation or build process is needed.
 
 > Or just download code zip file. But you need to download "UnboundedSans.otf" and "UnboundedSans.ttf" to get fonts support.
 
+## 📱 iOS Shortcuts Integration
+
+**New!** You can now generate CoverShare images directly from Spotify using iOS Shortcuts.
+
+### Quick Start
+
+1. **Deploy API to Vercel** (free, takes 5 minutes)
+   - Follow [Deployment Guide](./docs/deployment-guide.md)
+
+2. **Set up iOS Shortcut**
+   - Follow [iOS Shortcut Guide](./docs/ios-shortcut-guide.md)
+
+3. **Use it!**
+   - Share any song from Spotify
+   - Select image style (Liquid Glass / Classic Vibe / Both)
+   - Images automatically save to your Photos
+
+### Documentation
+
+- 📖 [Deployment Guide](./docs/deployment-guide.md) - Deploy API to Vercel
+- 📱 [iOS Shortcut Guide](./docs/ios-shortcut-guide.md) - Set up iPhone shortcut
+- 🔧 [API Documentation](./docs/api-documentation.md) - API reference
+
 ## 📄 License
 
 This project is open-source and available under the MIT License.
