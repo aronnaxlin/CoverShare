@@ -1,4 +1,5 @@
-const chromium = require('chrome-aws-lambda');
+const chromium = require('@sparticuz/chromium');
+const puppeteer = require('puppeteer-core');
 
 // iTunes API search function
 async function searchAlbum(query) {
@@ -290,12 +291,18 @@ export default async function handler(req, res) {
     const albumData = await searchAlbum(query);
     console.log(`Found album: ${albumData.collectionName} by ${albumData.artistName}`);
 
-    // Launch browser with chrome-aws-lambda
-    const browser = await chromium.puppeteer.launch({
-      args: chromium.args,
+    // Launch browser with minimal args for Vercel
+    const browser = await puppeteer.launch({
+      args: [
+        ...chromium.args,
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+      ],
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath,
-      headless: chromium.headless,
+      executablePath: await chromium.executablePath(),
+      headless: true,
     });
 
     const results = [];
