@@ -54,8 +54,23 @@
         const inp = document.getElementById('inp-search');
         inp.addEventListener('input', (e) => {
             clearTimeout(timer);
-            if (e.target.value.length < 2) return;
-            timer = setTimeout(() => doSearch(e.target.value), 500);
+            const val = e.target.value.trim();
+            if (val.length < 2) return;
+
+            // Check if it's a URL
+            if (val.includes('y.qq.com')) {
+                // QQ Music URL - resolve immediately
+                timer = setTimeout(async () => {
+                    const resolved = await resolveQQMusicUrl(val);
+                    if (resolved) fetchAlbum(resolved);
+                }, 500);
+            } else if (val.includes('open.spotify.com')) {
+                // Spotify URL - let the API handle it via generate endpoint
+                timer = setTimeout(() => fetchAlbum(val), 500);
+            } else {
+                // Regular search
+                timer = setTimeout(() => doSearch(val), 500);
+            }
         });
 
         async function doSearch(q) {
@@ -90,6 +105,45 @@
                 const d = await res.json();
                 if (d.results.length) loadAlbum(d.results[0]);
             } catch (e) { console.error("Fetch album failed:", e); }
+        }
+
+        // Helper to resolve QQ Music URL
+        async function resolveQQMusicUrl(qqUrl) {
+            try {
+                // Extract song_mid from URL
+                const match = qqUrl.match(/songDetail\/([A-Za-z0-9]+)/);
+                if (!match) return null;
+
+                const songMid = match[1];
+                console.log(`Extracted QQ Music song_mid: ${songMid}`);
+
+                // Build API request data
+                const apiData = {
+                    comm: { ct: 24, cv: 0 },
+                    songinfo: {
+                        method: "get_song_detail_yqq",
+                        param: { song_mid: songMid },
+                        module: "music.pf_song_detail_svr"
+                    }
+                };
+
+                const apiUrl = `https://u.y.qq.com/cgi-bin/musicu.fcg?format=json&data=${encodeURIComponent(JSON.stringify(apiData))}`;
+
+                const res = await fetch(apiUrl);
+                const data = await res.json();
+
+                if (data.songinfo?.data?.track_info) {
+                    const track = data.songinfo.data.track_info;
+                    const albumName = track.album.name || track.album.title;
+                    const artistName = track.singer && track.singer.length > 0 ? track.singer[0].name : '';
+
+                    console.log(`Resolved QQ Music URL to: ${albumName} ${artistName}`);
+                    return `${albumName} ${artistName}`;
+                }
+            } catch (e) {
+                console.error("Error resolving QQ Music URL:", e);
+            }
+            return null;
         }
 
         // --- Core Font Logic ---

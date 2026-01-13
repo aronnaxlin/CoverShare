@@ -53,6 +53,55 @@ async function resolveSpotifyUrl(spotifyUrl) {
   return null;
 }
 
+// Helper to resolve QQ Music URL to "Album Artist" string
+async function resolveQQMusicUrl(qqUrl) {
+  try {
+    // Extract song_mid from URL
+    const match = qqUrl.match(/songDetail\/([A-Za-z0-9]+)/);
+    if (!match) {
+      console.error("Could not extract song_mid from QQ Music URL");
+      return null;
+    }
+
+    const songMid = match[1];
+    console.log(`Extracted QQ Music song_mid: ${songMid}`);
+
+    // Build API request data
+    const apiData = {
+      comm: { ct: 24, cv: 0 },
+      songinfo: {
+        method: "get_song_detail_yqq",
+        param: { song_mid: songMid },
+        module: "music.pf_song_detail_svr"
+      }
+    };
+
+    const apiUrl = `https://u.y.qq.com/cgi-bin/musicu.fcg?format=json&data=${encodeURIComponent(JSON.stringify(apiData))}`;
+
+    const res = await fetch(apiUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://y.qq.com/'
+      }
+    });
+    const data = await res.json();
+
+    if (data.songinfo?.data?.track_info) {
+      const track = data.songinfo.data.track_info;
+      const albumName = track.album.name || track.album.title;
+      const artistName = track.singer && track.singer.length > 0 ? track.singer[0].name : '';
+
+      console.log(`Resolved QQ Music URL to: ${albumName} ${artistName}`);
+      return `${albumName} ${artistName}`;
+    }
+
+    console.error("Could not find track info in QQ Music API response");
+  } catch (e) {
+    console.error("Error resolving QQ Music URL:", e);
+  }
+  return null;
+}
+
 // Generate HTML template with album data
 function generateHTML(albumData, style) {
   const artworkUrl = albumData.artworkUrl100.replace('100x100bb', '600x600bb');
@@ -390,6 +439,13 @@ export default async function handler(req, res) {
     let searchQuery = query;
     if (query.includes('open.spotify.com')) {
         const resolved = await resolveSpotifyUrl(query);
+        if (resolved) {
+            searchQuery = resolved;
+        }
+    }
+    // Check if query is a QQ Music URL
+    else if (query.includes('y.qq.com')) {
+        const resolved = await resolveQQMusicUrl(query);
         if (resolved) {
             searchQuery = resolved;
         }

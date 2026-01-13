@@ -37,6 +37,7 @@ Share songs from Spotify → Choose style → Images save to Photos automaticall
 - Instant search via iTunes API
 - Multi-language support (English, 简体中文, 繁體中文)
 - Supports both US and Taiwan stores
+- **Direct URL support**: Paste Spotify or QQ Music share links
 
 ### 🖼️ High-Quality Export
 - Transparent PNG downloads
@@ -44,7 +45,7 @@ Share songs from Spotify → Choose style → Images save to Photos automaticall
 - Dynamic font sizing for long titles
 
 ### 📱 iOS Integration
-- Share directly from Spotify
+- Share directly from Spotify or QQ Music
 - Generate images via Shortcuts
 - Auto-save to Photos
 
@@ -136,6 +137,7 @@ See [Deployment Guide](./docs/deployment-guide.md) for detailed instructions.
 **APIs**
 - [iTunes Search API](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/index.html)
 - Spotify URL parsing (for iOS Shortcuts)
+- QQ Music API integration (for URL sharing)
 
 **Fonts**
 - [UnboundedSans](https://github.com/maoken-fonts/unbounded-sans)
@@ -156,12 +158,15 @@ See [Deployment Guide](./docs/deployment-guide.md) for detailed instructions.
 - **Web**: html2canvas captures DOM element
 - **iOS Shortcut**: Puppeteer renders on Vercel, returns Base64 PNG
 
-### Spotify Integration
-The iOS Shortcut:
-1. Receives Spotify share URL
-2. Sends to API which parses album/artist from metadata
-3. API searches iTunes and generates images
-4. Base64 images returned and saved to Photos
+### Music Platform Integration
+**Spotify & QQ Music Support:**
+1. Receives share URL from Spotify or QQ Music
+2. API extracts album/artist information:
+   - **Spotify**: Parses metadata from OpenGraph tags
+   - **QQ Music**: Queries official API with song ID
+3. Searches iTunes API for album artwork
+4. Generates cover images and returns Base64 PNG
+5. iOS Shortcut saves images to Photos automatically
 
 ---
 

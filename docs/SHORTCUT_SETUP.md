@@ -2,7 +2,7 @@
 
 ## Quick Overview
 This shortcut will:
-1. Get a song shared from Spotify
+1. Get a song shared from Spotify or QQ Music
 2. Ask you to choose a style (Liquid Glass or Classic Vibe)
 3. Generate beautiful cover images
 4. Save them to your Photos
@@ -191,6 +191,7 @@ This shortcut will:
 
 ## How to Use
 
+### From Spotify:
 1. Open **Spotify** app
 2. Play any song
 3. Tap **⋯** (More) → **Share**
@@ -199,13 +200,27 @@ This shortcut will:
 6. Wait 5-10 seconds
 7. Images appear in Photos! 🎉
 
+### From QQ Music:
+1. Open **QQ Music** app
+2. Play any song
+3. Tap **Share** button
+4. Copy the share link
+5. Open **Shortcuts** app
+6. Run **CoverShare** shortcut
+7. Paste the QQ Music link when prompted
+8. Select your preferred style
+9. Wait 5-10 seconds
+10. Images appear in Photos! 🎉
+
 ---
 
 ## Troubleshooting
 
 ### "No input provided"
-- Make sure you're sharing from Spotify
-- The share should include a URL like `open.spotify.com/track/...`
+- Make sure you're sharing from Spotify or QQ Music
+- The share link should look like:
+  - Spotify: `open.spotify.com/track/...`
+  - QQ Music: `y.qq.com/n/ryqq/songDetail/...`
 
 ### "Invalid album" error
 - Try a more popular song
@@ -222,7 +237,7 @@ This shortcut will:
 
 ## Tips
 
-- Works with any song on Spotify
+- Works with Spotify and QQ Music
 - Creates high-resolution PNG images
 - Images have transparent backgrounds
 - Perfect for sharing on social media
