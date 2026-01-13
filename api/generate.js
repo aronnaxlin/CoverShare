@@ -74,12 +74,16 @@ async function resolveSpotifyUrl(spotifyUrl) {
 // Helper to resolve QQ Music URL to "Album Artist" string
 async function resolveQQMusicUrl(qqUrl) {
   try {
+    // Extract URL from text if needed (handles "Artist Name https://..." format)
+    const urlMatch = qqUrl.match(/(https?:\/\/[^\s]+)/);
+    const cleanUrl = urlMatch ? urlMatch[0] : qqUrl;
+
     // URL - check for short link or direct link
-    let finalUrl = qqUrl;
+    let finalUrl = cleanUrl;
     let songMid = null;
 
     // Matches direct link: songDetail/0029CVxG4QngaW
-    const directMatch = qqUrl.match(/songDetail\/([A-Za-z0-9]+)/);
+    const directMatch = cleanUrl.match(/songDetail\/([A-Za-z0-9]+)/);
 
     if (directMatch) {
         songMid = directMatch[1];

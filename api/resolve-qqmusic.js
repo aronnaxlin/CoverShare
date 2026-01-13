@@ -23,8 +23,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing url parameter' });
     }
 
+    // Extract URL from text if needed (handles "Artist Name https://..." format)
+    const urlMatch = qqUrl.match(/(https?:\/\/[^\s]+)/);
+    const cleanUrl = urlMatch ? urlMatch[0] : qqUrl;
+
     // URL - check for short link or direct link
-    let finalUrl = qqUrl;
+    let finalUrl = cleanUrl;
     let songMid = null;
 
     // Matches direct link: songDetail/0029CVxG4QngaW
