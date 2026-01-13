@@ -3,7 +3,7 @@
 ## Quick Overview
 This shortcut will:
 1. Get a song shared from Spotify
-2. Ask you to choose a style (Liquid Glass / Classic Vibe / Both)
+2. Ask you to choose a style (Liquid Glass or Classic Vibe)
 3. Generate beautiful cover images
 4. Save them to your Photos
 
@@ -55,10 +55,9 @@ This shortcut will:
 - Search for: **"Choose from Menu"**
 - Add: **"Choose from Menu"**
 - Prompt: `Select Image Style`
-- Add 3 menu items:
+- Add 2 menu items:
   1. **Liquid Glass**
   2. **Classic Vibe**
-  3. **Both Styles**
 
 ---
 
@@ -76,13 +75,6 @@ This shortcut will:
 #### Under "Classic Vibe" Option:
 1. Add: **"Text"** action
 2. Type inside it: `jewel`
-3. Add: **"Set Variable"**
-4. Variable Name: `StyleChoice`
-5. Value: **Text**
-
-#### Under "Both Styles" Option:
-1. Add: **"Text"** action
-2. Type inside it: `both`
 3. Add: **"Set Variable"**
 4. Variable Name: `StyleChoice`
 5. Value: **Text**
@@ -182,8 +174,7 @@ This shortcut will:
 3. Set Variable → SongQuery
 4. Choose from Menu "Select Image Style"
    ├─ Liquid Glass → Text "liquid" → Set Variable StyleChoice
-   ├─ Classic Vibe → Text "jewel" → Set Variable StyleChoice
-   └─ Both Styles → Text "both" → Set Variable StyleChoice
+   └─ Classic Vibe → Text "jewel" → Set Variable StyleChoice
 5. Get Contents of URL (POST to API)
 6. Get Dictionary from Input
 7. Check for Error
